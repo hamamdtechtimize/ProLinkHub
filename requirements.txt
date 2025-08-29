@@ -4,6 +4,7 @@ sqlalchemy
 python-multipart==0.0.6
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+pydantic[email]==2.3.0
 motor==3.2.0
 pydantic==2.3.0
 pymongo==4.4.0

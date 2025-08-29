@@ -17,6 +17,7 @@ services:
       - mongo
     volumes:
       - ./app:/app/app
+      - ./uploads:/app/uploads
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/')"]

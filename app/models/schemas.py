@@ -55,18 +55,37 @@ class QuizQuestion(BaseModel):
         arbitrary_types_allowed=True,
         json_encoders={ObjectId: str})
 
-class ConsultationImage(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
-    consultation_id: PyObjectId
-    image_type: str
-    image_url: str
-    analysis_result: Optional[Dict] = None
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+from enum import Enum
 
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-        json_encoders={ObjectId: str})
+# HVAC Image Schemas
+class HVACImageCategory(str, Enum):
+    OUTDOOR_UNIT = "outdoor_unit"
+    POWER_HUB = "power_hub"
+    COMMAND_CENTER = "command_center"
+    INDOOR_SYSTEM = "indoor_system"
+    ENERGY_BILL = "energy_bill"
+
+class HVACImageSubCategory(str, Enum):
+    # Outdoor Unit sub-categories
+    BIG_PICTURE = "big_picture"
+    DATA_PLATE = "data_plate"
+    
+    # Power Hub sub-categories
+    PANEL_COVER = "panel_cover"
+    INSIDE_PANEL = "inside_panel"
+    
+    # Command Center sub-categories
+    MAIN_THERMOSTAT = "main_thermostat"
+    
+    # Indoor System sub-categories
+    INDOOR_UNIT = "indoor_unit"
+    
+    # Energy Bill sub-categories
+    RECENT_BILL = "recent_bill"
+
+
+
+
 
 class ConsultationBase(BaseModel):
     quiz_answers: Dict[str, Any] = {}
@@ -79,12 +98,17 @@ class Consultation(ConsultationBase):
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     session_id: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    images: List[ConsultationImage] = []
+    images: List[Dict[str, Any]] = []
+    quiz_completed: bool = False
+    images_completed: bool = False
+    estimate_generated: bool = False
 
     model_config = ConfigDict(
         populate_by_name=True,
         arbitrary_types_allowed=True,
         json_encoders={ObjectId: str})
+
+
 
 class Token(BaseModel):
     access_token: str

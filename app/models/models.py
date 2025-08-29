@@ -85,12 +85,38 @@ class User(MongoBaseModel):
     name: str
     is_admin: bool = False  # This will be set internally, not from user input
 
-class ConsultationImage(MongoBaseModel):
-    consultation_id: str
-    image_type: str
-    image_path: str
-    analysis_result: Optional[Dict] = None
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+from enum import Enum
+
+# HVAC Image Category Enum
+class HVACImageCategory(str, Enum):
+    OUTDOOR_UNIT = "outdoor_unit"
+    POWER_HUB = "power_hub"
+    COMMAND_CENTER = "command_center"
+    INDOOR_SYSTEM = "indoor_system"
+    ENERGY_BILL = "energy_bill"
+
+# HVAC Image Sub-Category Enum
+class HVACImageSubCategory(str, Enum):
+    # Outdoor Unit sub-categories
+    BIG_PICTURE = "big_picture"
+    DATA_PLATE = "data_plate"
+    
+    # Power Hub sub-categories
+    PANEL_COVER = "panel_cover"
+    INSIDE_PANEL = "inside_panel"
+    
+    # Command Center sub-categories
+    MAIN_THERMOSTAT = "main_thermostat"
+    
+    # Indoor System sub-categories
+    INDOOR_UNIT = "indoor_unit"
+    
+    # Energy Bill sub-categories
+    RECENT_BILL = "recent_bill"
+
+
+
+
 
 
 
@@ -99,5 +125,30 @@ class Consultation(MongoBaseModel):
     user_id: Optional[str] = None
     quiz_answers: Dict = {}
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    status: str = "pending"  # pending, answers_submitted, estimate_ready, images_uploaded, completed, etc.
-    images: List[ConsultationImage] = []
+    status: str = "pending"  # pending, answers_submitted, images_uploaded, estimate_ready, completed
+    images: List[Dict[str, Any]] = []
+    
+    # Discount tracking
+    total_discount: float = 0.0
+    completed_categories: List[str] = []
+    
+    # Consultation progress tracking
+    quiz_completed: bool = False
+    images_completed: bool = False
+    estimate_generated: bool = False
+    
+    def update_progress(self):
+        """Update consultation progress based on current state"""
+        self.quiz_completed = len(self.quiz_answers) > 0
+        
+        # Check if all required images are uploaded
+        required_categories = ['outdoor_unit', 'power_hub', 'command_center', 'indoor_system', 'energy_bill']
+        
+        # Simple check for images completion
+        self.images_completed = len(self.images) >= 7  # Max 7 images
+        
+        # Update overall status
+        if self.images_completed and self.quiz_completed:
+            self.status = "images_uploaded"
+        elif self.quiz_completed:
+            self.status = "answers_submitted"

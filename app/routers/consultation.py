@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from typing import List, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from typing import List, Dict, Any, Optional
 import uuid
-import os
 from ..models import models, database
+
 from app.services.consultation_analyzer import ConsultationAnalyzer
 from app.services.s3_service import S3Service
 from app.services.pricing_service import PricingService
-import shutil
 from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from bson import ObjectId
@@ -16,12 +15,7 @@ analyzer = ConsultationAnalyzer()
 s3_service = S3Service()
 pricing_service = PricingService()
 
-# Helper function to create upload directory if it doesn't exist
-def ensure_upload_dir():
-    upload_dir = "uploads"
-    if not os.path.exists(upload_dir):
-        os.makedirs(upload_dir)
-    return upload_dir
+
 
 def serialize_mongo_doc(doc):
     """Convert MongoDB document to JSON-serializable format"""
@@ -69,7 +63,8 @@ async def submit_consultation_answers(
         raise HTTPException(status_code=404, detail="Session not found")
     
     # Get all questions to validate the answers
-    questions = await db.quiz_questions.find().to_list(1000)
+    quiz_questions_collection = await database.get_quiz_questions()
+    questions = await quiz_questions_collection.find().to_list(1000)
     questions_dict = {str(q["_id"]): q for q in questions}
     
     # Validate required questions
@@ -156,15 +151,20 @@ async def submit_consultation_answers(
     }
 
 @router.post("/consultation/{session_id}/images")
-async def upload_image(
+async def upload_hvac_image(
     session_id: str,
+    category: str = Form(...),
+    sub_category: str = Form(...),
     file: UploadFile = File(...),
     db: AsyncIOMotorDatabase = Depends(database.get_db)
 ):
-    """Upload HVAC system image (2-5 images allowed)
+    """Upload HVAC system image with category and sub-category
     
     Images can be uploaded after answers are submitted or after estimate is generated.
     This allows for the flow: submit_answers -> generate_estimate -> upload_images
+    
+    Categories: outdoor_unit, power_hub, command_center, indoor_system, energy_bill
+    Sub-categories: big_picture, data_plate, panel_cover, inside_panel, main_thermostat, indoor_unit, recent_bill
     """
     # First check if consultation exists and has answers submitted
     consultation = await db.consultations.find_one({"session_id": session_id})
@@ -177,12 +177,20 @@ async def upload_image(
             detail="Please submit consultation answers before uploading images"
         )
     
-    # Count existing images in consultation document
-    existing_images = consultation.get("images", [])
-    if len(existing_images) >= 5:
+    # Validate category and sub_category
+    valid_categories = ["outdoor_unit", "power_hub", "command_center", "indoor_system", "energy_bill"]
+    valid_sub_categories = ["big_picture", "data_plate", "panel_cover", "inside_panel", "main_thermostat", "indoor_unit", "recent_bill"]
+    
+    if category not in valid_categories:
         raise HTTPException(
             status_code=400,
-            detail="Maximum 5 images allowed per consultation"
+            detail=f"Invalid category. Valid categories are: {', '.join(valid_categories)}"
+        )
+    
+    if sub_category not in valid_sub_categories:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid sub_category. Valid sub_categories are: {', '.join(valid_sub_categories)}"
         )
     
     # Check file type
@@ -192,24 +200,45 @@ async def upload_image(
             detail="Only image files are allowed"
         )
     
+    # Count existing images in consultation document (max 7 images)
+    existing_images = consultation.get("images", [])
+    if len(existing_images) >= 7:
+        raise HTTPException(
+            status_code=400,
+            detail="Maximum 7 images allowed per consultation"
+        )
+    
+    # Check if this category/sub-category combination already exists
+    for img in existing_images:
+        if img.get("category") == category and img.get("sub_category") == sub_category:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Image for {category} - {sub_category} already exists. You can only upload one image per sub-category."
+            )
+    
     # Initialize S3 service
     s3_service = S3Service()
     
     try:
-        # Upload file to S3 with sequential numbering using consultation_id
+        # Upload file to S3 with category-based naming
         image_number = len(existing_images) + 1
+        s3_key = f"{str(consultation['_id'])}/hvac_images/{category}/{sub_category}_{image_number}"
+        
         s3_url = await s3_service.upload_file(
             file.file,
-            str(consultation["_id"]),  # Use consultation_id instead of session_id
-            f"image_{image_number}"
+            str(consultation["_id"]),
+            s3_key
         )
         
-        # Create image object
+        # Create categorized image object
         image = {
             "image_number": image_number,
             "image_url": s3_url,
             "original_filename": file.filename,
-            "created_at": datetime.utcnow()
+            "category": category,
+            "sub_category": sub_category,
+            "created_at": datetime.utcnow(),
+            "s3_key": s3_key
         }
         
         # Update consultation status and add image directly to consultation document
@@ -224,10 +253,51 @@ async def upload_image(
             }
         )
         
+        # Calculate completed categories and total discount
+        # Only apply discount when BOTH images of a category are uploaded
+        category_image_counts = {}
+        for img in existing_images + [image]:
+            cat = img.get("category")
+            category_image_counts[cat] = category_image_counts.get(cat, 0) + 1
+        
+        # Get HVAC categories to check which ones are fully completed
+        hvac_categories_collection = await database.get_hvac_categories()
+        hvac_categories = await hvac_categories_collection.find().to_list(1000)
+        
+        # Find categories that have both images uploaded
+        fully_completed_categories = []
+        new_total_discount = 0
+        
+        for cat in hvac_categories:
+            category_key = cat.get("category")
+            required_images = len(cat.get("sub_categories", []))
+            uploaded_images = category_image_counts.get(category_key, 0)
+            
+            if uploaded_images >= required_images:
+                fully_completed_categories.append(category_key)
+                new_total_discount += cat.get("discount_amount", 0)
+        
+        # Update consultation with new discount and completed categories
+        await db.consultations.update_one(
+            {"_id": consultation["_id"]},
+            {
+                "$set": {
+                    "total_discount": new_total_discount,
+                    "completed_categories": fully_completed_categories
+                }
+            }
+        )
+        
         return {
-            "message": "Image uploaded successfully",
+            "message": "HVAC image uploaded successfully",
             "image_url": s3_url,
-            "image_number": image_number
+            "image_number": image_number,
+            "category": category,
+            "sub_category": sub_category,
+            "total_images": len(existing_images) + 1,
+            "completed_categories": fully_completed_categories,
+            "total_discount": new_total_discount,
+            "remaining_images": 7 - (len(existing_images) + 1)
         }
         
     except Exception as e:
@@ -242,18 +312,29 @@ async def get_consultation_details(
     session_id: str,
     db: AsyncIOMotorDatabase = Depends(database.get_db)
 ):
-    """Get consultation details including quiz answers and images"""
+    """Get consultation details including quiz answers, images, and discount status"""
     # Get consultation with quiz answers and images
     consultation = await db.consultations.find_one({"session_id": session_id})
     if not consultation:
         raise HTTPException(status_code=404, detail="Consultation not found")
     
-    # Return consultation response (images are already in the document)
+    # Return consultation response with discount info
     consultation_response = serialize_mongo_doc(consultation)
     
     return {
-        "consultation": consultation_response
+        "consultation": consultation_response,
+        "discount_summary": {
+            "total_discount": consultation.get("total_discount", 0),
+            "completed_categories": consultation.get("completed_categories", []),
+            "total_images": len(consultation.get("images", [])),
+            "max_images": 7
+        }
     }
+
+
+
+
+
 
 @router.post("/consultation/{session_id}/analyze-all")
 async def analyze_all_consultation_images(
@@ -278,10 +359,11 @@ async def analyze_all_consultation_images(
         if not images:
             raise HTTPException(status_code=404, detail="No images found for this consultation")
 
-        # Extract image keys from image URLs
+        # Extract S3 keys from images
         image_keys = [
-            os.path.basename(image["image_url"].split("?")[0])  # Get filename from S3 URL
+            image.get("s3_key", "")  # Get S3 key from image object
             for image in images
+            if image.get("s3_key")
         ]
 
         # Analyze all images
@@ -406,7 +488,6 @@ async def generate_pricing_estimate(
             {
                 "$set": {
                     "pricing_estimate": estimate,
-                    "estimate_generated_at": datetime.utcnow(),
                     "status": "estimate_ready"
                 }
             }
@@ -424,4 +505,102 @@ async def generate_pricing_estimate(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to generate estimate: {str(e)}"
+        )
+
+@router.post("/consultation/{session_id}/update-estimate-with-discount")
+async def update_estimate_with_discount(
+    session_id: str,
+    db: AsyncIOMotorDatabase = Depends(database.get_db)
+):
+    """Update pricing estimate by applying discount from completed categories
+    
+    This endpoint takes the existing pricing estimate and subtracts the total discount
+    from all three price tiers (good, better, best) based on completed categories.
+    
+    IMPORTANT: This API can only be called ONCE per session ID.
+    """
+    try:
+        # Get consultation data
+        consultation = await db.consultations.find_one({"session_id": session_id})
+        if not consultation:
+            raise HTTPException(status_code=404, detail="Consultation not found")
+        
+        # Check if estimate exists
+        if not consultation.get("pricing_estimate"):
+            raise HTTPException(status_code=400, detail="Pricing estimate not found. Please generate estimate first.")
+        
+        # Check if discount has already been applied (ONE-TIME ONLY)
+        if consultation.get("original_pricing_estimate"):
+            raise HTTPException(
+                status_code=400, 
+                detail="Discount has already been applied to this estimate. This API can only be called once per session."
+            )
+        
+        # Get current discount
+        total_discount = consultation.get("total_discount", 0)
+        completed_categories = consultation.get("completed_categories", [])
+        
+        if total_discount == 0:
+            return {
+                "message": "No discount to apply",
+                "consultation_id": str(consultation["_id"]),
+                "original_estimate": consultation["pricing_estimate"],
+                "discounted_estimate": consultation["pricing_estimate"],
+                "total_discount": total_discount,
+                "completed_categories": completed_categories
+            }
+        
+        # Get original estimate
+        original_estimate = consultation["pricing_estimate"]
+        
+        # Create discounted estimate by subtracting discount from all tiers
+        discounted_estimate = {
+            "estimates": {
+                "good": {
+                    "label": original_estimate["estimates"]["good"]["label"],
+                    "minPrice": max(0, original_estimate["estimates"]["good"]["minPrice"] - total_discount),
+                    "maxPrice": max(0, original_estimate["estimates"]["good"]["maxPrice"] - total_discount)
+                },
+                "better": {
+                    "label": original_estimate["estimates"]["better"]["label"],
+                    "minPrice": max(0, original_estimate["estimates"]["better"]["minPrice"] - total_discount),
+                    "maxPrice": max(0, original_estimate["estimates"]["better"]["maxPrice"] - total_discount)
+                },
+                "best": {
+                    "label": original_estimate["estimates"]["best"]["label"],
+                    "minPrice": max(0, original_estimate["estimates"]["best"]["minPrice"] - total_discount),
+                    "maxPrice": max(0, original_estimate["estimates"]["best"]["maxPrice"] - total_discount)
+                }
+            },
+            "tonnage": original_estimate.get("tonnage", 3.5),
+            "systemCount": original_estimate.get("systemCount", 1),
+            "discount_applied": total_discount,
+            "completed_categories": completed_categories
+        }
+        
+        # Update consultation with discounted estimate
+        await db.consultations.update_one(
+            {"_id": consultation["_id"]},
+            {
+                "$set": {
+                    "pricing_estimate": discounted_estimate,
+                    "original_pricing_estimate": original_estimate  # Store original for reference
+                }
+            }
+        )
+        
+        return {
+            "message": "Pricing estimate updated with discount successfully (ONE-TIME ONLY)",
+            "consultation_id": str(consultation["_id"]),
+            "discounted_estimate": discounted_estimate,
+            "total_discount": total_discount,
+            "completed_categories": completed_categories
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update estimate with discount: {str(e)}"
         )

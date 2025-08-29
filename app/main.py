@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import consultation, admin, quiz
-from .models import database
+from .routers import consultation, admin, quiz, hvac_categories
 import uvicorn
-from motor.motor_asyncio import AsyncIOMotorDatabase
 
 app = FastAPI(
     title="HVAC Consultation API",
@@ -14,9 +12,7 @@ app = FastAPI(
     }
 )
 
-@app.on_event("startup")
-async def startup_db_client():
-    await database.init_db()
+
 
 # Configure CORS
 app.add_middleware(
@@ -31,6 +27,8 @@ app.add_middleware(
 app.include_router(consultation.router, prefix="/api/v1", tags=["consultation"])
 app.include_router(admin.router, prefix="/api/v1/admin", tags=["admin"])
 app.include_router(quiz.router, prefix="/api/v1/quiz", tags=["quiz"])
+app.include_router(hvac_categories.router, prefix="/api/v1", tags=["hvac-categories"])
+
 
 
 

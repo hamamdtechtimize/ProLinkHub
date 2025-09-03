@@ -100,7 +100,7 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
         {
             "category": "indoor_system",
             "display_name": "Indoor System",
-            "discount_amount": 500.0,
+            "discount_amount": 0.0,
             "description": "Helps us understand your air handler/furnace.",
             "why_we_need_this": "Tells us about indoor air movement and heating/cooling compatibility.",
             "sub_categories": [
@@ -115,7 +115,7 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
         {
             "category": "energy_bill",
             "display_name": "Energy Bill",
-            "discount_amount": 200.0,
+            "discount_amount": 0.0,
             "description": "Shows your current usage to estimate savings.",
             "why_we_need_this": "Helps us project efficiency improvements.",
             "sub_categories": [
@@ -150,21 +150,6 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
              detail=f"Failed to seed HVAC categories: {str(e)}"
          )
 
-@router.get("/admin/hvac-categories")
-async def get_hvac_categories_from_db(db: AsyncIOMotorDatabase = Depends(database.get_db)):
-    """Get all HVAC categories from database"""
-    try:
-        categories = await db.hvac_categories.find().to_list(1000)
-        return {
-            "message": "HVAC categories retrieved successfully",
-            "total_categories": len(categories),
-            "categories": [serialize_mongo_doc(cat) for cat in categories]
-        }
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to retrieve HVAC categories: {str(e)}"
-        )
 
 @router.put("/admin/hvac-categories/{category}")
 async def update_hvac_category(

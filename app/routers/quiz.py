@@ -120,6 +120,18 @@ async def seed_quiz_questions(db: AsyncIOMotorDatabase = Depends(database.get_db
             ],
             "is_required": True,
             "order": 11
+        },
+        {
+            "question_text": "What's your project timeline?",
+            "input_type": "radio",
+            "options": [
+                "ASAP",
+                "1-2 Months", 
+                "3-6 Months",
+                "Just Exploring"
+            ],
+            "is_required": True,
+            "order": 12
         }
     ]
     

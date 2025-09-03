@@ -92,7 +92,6 @@ class HVACImageCategory(str, Enum):
     OUTDOOR_UNIT = "outdoor_unit"
     POWER_HUB = "power_hub"
     COMMAND_CENTER = "command_center"
-    INDOOR_SYSTEM = "indoor_system"
     ENERGY_BILL = "energy_bill"
 
 # HVAC Image Sub-Category Enum
@@ -108,8 +107,6 @@ class HVACImageSubCategory(str, Enum):
     # Command Center sub-categories
     MAIN_THERMOSTAT = "main_thermostat"
     
-    # Indoor System sub-categories
-    INDOOR_UNIT = "indoor_unit"
     
     # Energy Bill sub-categories
     RECENT_BILL = "recent_bill"
@@ -142,7 +139,7 @@ class Consultation(MongoBaseModel):
         self.quiz_completed = len(self.quiz_answers) > 0
         
         # Check if all required images are uploaded
-        required_categories = ['outdoor_unit', 'power_hub', 'command_center', 'indoor_system', 'energy_bill']
+        required_categories = ['outdoor_unit', 'power_hub', 'command_center', 'energy_bill']
         
         # Simple check for images completion
         self.images_completed = len(self.images) >= 7  # Max 7 images

@@ -163,8 +163,8 @@ async def upload_hvac_image(
     Images can be uploaded after answers are submitted or after estimate is generated.
     This allows for the flow: submit_answers -> generate_estimate -> upload_images
     
-    Categories: outdoor_unit, power_hub, command_center, indoor_system, energy_bill
-    Sub-categories: big_picture, data_plate, panel_cover, inside_panel, main_thermostat, indoor_unit, recent_bill
+    Categories: outdoor_unit, power_hub, command_center, energy_bill
+    Sub-categories: big_picture, data_plate, panel_cover, inside_panel, main_thermostat, recent_bill
     """
     # First check if consultation exists and has answers submitted
     consultation = await db.consultations.find_one({"session_id": session_id})
@@ -178,8 +178,8 @@ async def upload_hvac_image(
         )
     
     # Validate category and sub_category
-    valid_categories = ["outdoor_unit", "power_hub", "command_center", "indoor_system", "energy_bill"]
-    valid_sub_categories = ["big_picture", "data_plate", "panel_cover", "inside_panel", "main_thermostat", "indoor_unit", "recent_bill"]
+    valid_categories = ["outdoor_unit", "power_hub", "command_center", "energy_bill"]
+    valid_sub_categories = ["big_picture", "data_plate", "panel_cover", "inside_panel", "main_thermostat","recent_bill"]
     
     if category not in valid_categories:
         raise HTTPException(

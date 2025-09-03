@@ -128,8 +128,6 @@ class ImageService:
                     consultation_images.power_hub_images.append(image_obj)
                 elif image_obj.category == HVACImageCategory.COMMAND_CENTER:
                     consultation_images.command_center_images.append(image_obj)
-                elif image_obj.category == HVACImageCategory.INDOOR_SYSTEM:
-                    consultation_images.indoor_system_images.append(image_obj)
                 elif image_obj.category == HVACImageCategory.ENERGY_BILL:
                     consultation_images.energy_bill_images.append(image_obj)
             
@@ -208,11 +206,6 @@ class ImageService:
                         "images": len(consultation_images.command_center_images),
                         "required": 1,
                         "completed": consultation_images.completion_status.get("command_center", False)
-                    },
-                    "indoor_system": {
-                        "images": len(consultation_images.indoor_system_images),
-                        "required": 1,
-                        "completed": consultation_images.completion_status.get("indoor_system", False)
                     },
                     "energy_bill": {
                         "images": len(consultation_images.energy_bill_images),
@@ -343,24 +336,9 @@ class ImageService:
                 ]
             },
             {
-                "category": "indoor_system",
-                "display_name": "Indoor System",
-                "discount_amount": 500.0,
-                "description": "Helps us understand your air handler/furnace.",
-                "why_we_need_this": "Tells us about indoor air movement and heating/cooling compatibility.",
-                "sub_categories": [
-                    {
-                        "key": "indoor_unit",
-                        "display_name": "Indoor Unit",
-                        "description": "Photo of air handler/furnace.",
-                        "tip": "Include labels if visible."
-                    }
-                ]
-            },
-            {
                 "category": "energy_bill",
                 "display_name": "Energy Bill",
-                "discount_amount": 200.0,
+                "discount_amount": 500.0,
                 "description": "Shows your current usage to estimate savings.",
                 "why_we_need_this": "Helps us project efficiency improvements.",
                 "sub_categories": [

@@ -98,21 +98,6 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             ]
         },
         {
-            "category": "indoor_system",
-            "display_name": "Indoor System",
-            "discount_amount": 0.0,
-            "description": "Helps us understand your air handler/furnace.",
-            "why_we_need_this": "Tells us about indoor air movement and heating/cooling compatibility.",
-            "sub_categories": [
-                {
-                    "key": "indoor_unit",
-                    "display_name": "Indoor Unit",
-                    "description": "Photo of air handler/furnace.",
-                    "tip": "Include labels if visible."
-                }
-            ]
-        },
-        {
             "category": "energy_bill",
             "display_name": "Energy Bill",
             "discount_amount": 500.0,

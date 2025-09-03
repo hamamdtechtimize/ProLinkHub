@@ -145,7 +145,7 @@ class Consultation(MongoBaseModel):
         required_categories = ['outdoor_unit', 'power_hub', 'command_center', 'indoor_system', 'energy_bill']
         
         # Simple check for images completion
-        self.images_completed = len(self.images) >= 8  # Max 7 images
+        self.images_completed = len(self.images) >= 7  # Max 7 images
         
         # Update overall status
         if self.images_completed and self.quiz_completed:

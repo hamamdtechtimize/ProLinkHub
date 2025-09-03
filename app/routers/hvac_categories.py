@@ -115,7 +115,7 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
         {
             "category": "energy_bill",
             "display_name": "Energy Bill",
-            "discount_amount": 0.0,
+            "discount_amount": 500.0,
             "description": "Shows your current usage to estimate savings.",
             "why_we_need_this": "Helps us project efficiency improvements.",
             "sub_categories": [

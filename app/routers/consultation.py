@@ -200,12 +200,12 @@ async def upload_hvac_image(
             detail="Only image files are allowed"
         )
     
-    # Count existing images in consultation document (max 8 images)
+    # Count existing images in consultation document (max 7 images)
     existing_images = consultation.get("images", [])
-    if len(existing_images) >= 8:
+    if len(existing_images) >= 7:
         raise HTTPException(
             status_code=400,
-            detail="Maximum 8 images allowed per consultation"
+            detail="Maximum 7 images allowed per consultation"
         )
     
     # Check if this category/sub-category combination already exists
@@ -297,7 +297,7 @@ async def upload_hvac_image(
             "total_images": len(existing_images) + 1,
             "completed_categories": fully_completed_categories,
             "total_discount": new_total_discount,
-            "remaining_images": 8 - (len(existing_images) + 1)
+            "remaining_images": 7 - (len(existing_images) + 1)
         }
         
     except Exception as e:
@@ -327,7 +327,7 @@ async def get_consultation_details(
             "total_discount": consultation.get("total_discount", 0),
             "completed_categories": consultation.get("completed_categories", []),
             "total_images": len(consultation.get("images", [])),
-            "max_images": 8
+            "max_images": 7
         }
     }
 

@@ -165,16 +165,3 @@ async def admin_login(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/admin-info")
-async def get_admin_info(
-    db: AsyncIOMotorDatabase = Depends(database.get_db),
-    _: str = Depends(verify_token)
-):
-    """Get admin user information"""
-    admin_user = await db.users.find_one({"is_admin": True}, {"password_hash": 0})
-    if not admin_user:
-        raise HTTPException(status_code=404, detail="Admin user not found")
-    
-    return {
-        "admin": serialize_mongo_doc(admin_user)
-    }

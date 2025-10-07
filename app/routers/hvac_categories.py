@@ -47,19 +47,20 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "description": "These photos tell us the age, size, efficiency, and condition of your system.",
             "why_we_need_this": "This is crucial for us to understand your system's efficiency and overall condition.",
             "warning": "When taking photos of your outdoor unit, be careful of any sharp edges or electrical components. Make sure the area is clear of obstacles.",
-            "image":"",         
             "sub_categories": [
                 {
                     "key": "big_picture",
                     "display_name": "Big Picture",
                     "description": "Photo from 10–15 ft showing the whole outdoor unit.",
-                    "tip": "Make sure to capture surroundings too."
+                    "tip": "Make sure to capture surroundings too.",
+                    "image":""
                 },
                 {
                     "key": "data_plate",
                     "display_name": "Data Plate",
                     "description": "Close photo of model/serial sticker.",
-                    "tip": "Wipe it clean if dirty."
+                    "tip": "Wipe it clean if dirty.",
+                    "image":""
                 }
             ]
         },
@@ -70,19 +71,20 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "description": "Understand your home's electrical capacity for safe installation.",
             "why_we_need_this": "Ensures your home can safely handle modern upgrades.",
             "warning": "Please ensure your hands are completely dry before opening the panel cover. Do not touch any internal wiring.",
-            "image":"",
             "sub_categories": [
                 {
                     "key": "panel_cover",
                     "display_name": "Panel Cover",
                     "description": "Closed breaker panel with brand visible.",
-                    "tip": "Stand back 3–4 feet."
+                    "tip": "Stand back 3–4 feet.",
+                    "image":""
                 },
                 {
                     "key": "inside_panel",
                     "display_name": "Inside Panel",
                     "description": "Open panel showing breakers.",
-                    "tip": "Use flash for clarity."
+                    "tip": "Use flash for clarity.",
+                    "image":""
                 }
             ]
         },
@@ -93,13 +95,13 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "description": "Helps us recommend the best smart thermostat upgrades.",
             "why_we_need_this": "Shows how you control your system.",
             "warning": "Be careful when removing your thermostat cover if needed. Turn off the system before touching any wiring.",
-            "image":"",
             "sub_categories": [
                 {
                     "key": "main_thermostat",
                     "display_name": "Main Thermostat",
                     "description": "Photo of your main thermostat.",
-                    "tip": "Capture the display clearly."
+                    "tip": "Capture the display clearly.",
+                    "image":""
                 }
             ]
         },
@@ -110,13 +112,14 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "description": "Shows your current usage to estimate savings.",
             "why_we_need_this": "Helps us project efficiency improvements.",
             "warning": "Feel free to black out your personal account number or address if you prefer. We only need to see your usage patterns and rates.",
-            "image":"",
             "sub_categories": [
                 {
                     "key": "recent_bill",
                     "display_name": "Recent Bill",
                     "description": "Photo of your latest energy bill.",
-                    "tip": "Ensure account # and kWh usage are visible."
+                    "tip": "Ensure account # and kWh usage are visible.",
+                    "image":""
+                    
                 }
             ]
         }

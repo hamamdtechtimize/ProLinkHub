@@ -46,6 +46,7 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "discount_amount": 150.0,
             "description": "These photos tell us the age, size, efficiency, and condition of your system.",
             "why_we_need_this": "This is crucial for us to understand your system's efficiency and overall condition.",
+            "warning": "When taking photos of your outdoor unit, be careful of any sharp edges or electrical components. Make sure the area is clear of obstacles.",
             "sub_categories": [
                 {
                     "key": "big_picture",
@@ -67,6 +68,7 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "discount_amount": 50.0,
             "description": "Understand your home's electrical capacity for safe installation.",
             "why_we_need_this": "Ensures your home can safely handle modern upgrades.",
+            "warning": "Please ensure your hands are completely dry before opening the panel cover. Do not touch any internal wiring.",
             "sub_categories": [
                 {
                     "key": "panel_cover",
@@ -88,6 +90,7 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "discount_amount": 25.0,
             "description": "Helps us recommend the best smart thermostat upgrades.",
             "why_we_need_this": "Shows how you control your system.",
+            "warning": "Be careful when removing your thermostat cover if needed. Turn off the system before touching any wiring.",
             "sub_categories": [
                 {
                     "key": "main_thermostat",
@@ -103,6 +106,7 @@ async def seed_hvac_categories(db: AsyncIOMotorDatabase = Depends(database.get_d
             "discount_amount": 500.0,
             "description": "Shows your current usage to estimate savings.",
             "why_we_need_this": "Helps us project efficiency improvements.",
+            "warning": "Feel free to black out your personal account number or address if you prefer. We only need to see your usage patterns and rates.",
             "sub_categories": [
                 {
                     "key": "recent_bill",
